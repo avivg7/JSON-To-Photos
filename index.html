@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Flicker API</title>
+</head>
+
+<body>
+    <form id="search-form" method="get">
+        <!-- Here we are going get the input from the serach bar -->
+        <input type="search" placeholder="Search for an image title" />
+
+    </form>
+    <table id="photos-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Owner</th>
+                <th>Secret</th>
+                <th>Server</th>
+                <th>Farm</th>
+                <th>Title</th>
+                <th>Is Public</th>
+                <th>Is Friend</th>
+                <th>Is Family</th>
+                <th>Image</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        async function main() {
+            try {
+                // Function Object that take response and return it as json
+                const responseToJson = function (response) {
+                    return response.json();
+                };
+
+                // Read the json file as a Promise, using fetch promise is much better the using loadJSON, loadJSON 
+                // request to give hem the URL serveral callback functions like error and success etc..
+                // fetch return a Promise that can be pending (async), fulfilld (get a positive feedback that we 
+                // got the result from the API) and can be rejectet (return some error when it happend) 
+                // after the fetch we can use then() that he can get the function when it "fulfilld" or use
+                // catch() that can execute the file when it been "rejectet"
+                const promiseObject = fetch('./fliker.json');
+                //setTimeout()
+
+                // Use then that get a function object the return the json as an object wait until server return
+                const jsonObject = await promiseObject.then(responseToJson);
+
+                const photos = jsonObject.photos;
+                const photosArray = photos.photo;
+
+                if (Array.isArray(photosArray) && photosArray.length) {
+
+                    // Take the tags <table></table> that thier id is 'photos-table' and represent them as an object inside table
+                    const table = document.getElementById('photos-table');
+
+                    // Take the tags <tbody></tbody> and represent them as an object inside tbody
+                    const tbody = table.querySelector(`tbody`);
+
+                    function printLabel(isWhat) {
+                        return isWhat.toString() === '1' ? '✔' : '✕'
+                    }
+
+                    function getTrHTML(photo) {
+                        return `
+                        <tr>
+                            <td class="id">${photo.id}</td>
+                            <td class="owner">${photo.owner}</td>
+                            <td class="secret">${photo.secret}</td>
+                            <td class="server">${photo.server}</td>
+                            <td class="farm">${photo.farm}</td>
+                            <td class="title">${photo.title}</td>
+                            <td class="ispublic">${printLabel(photo.ispublic)}</td>
+                            <td class="isfriend">${printLabel(photo.isfriend)}</td>
+                            <td class="isfamily">${printLabel(photo.isfamily)}</td>
+                            <td class="image">
+                                <img src="https://farm${photo.farm}.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}.jpg" alt="${photo.title}" />
+                            </td>
+                        </tr>
+                    `;
+                    }
+
+                    let photoToTr = function (photoObj) {
+                        tbody.insertAdjacentHTML('beforeend', getTrHTML(photoObj));
+                    }
+                    photosArray.forEach(photoToTr);
+
+                    const searchForm = document.getElementById('search-form');
+
+                    let reloadPreventer = function (event) {
+                        return event.preventDefault()
+                    }
+
+                    searchForm.addEventListener('submit', reloadPreventer);
+
+                    const input = document.querySelector('[type = "search"]');
+
+                    const tbodyAllTr = Array.from(tbody.querySelectorAll('tr'));
+
+                    input.addEventListener('keyup', function (event) {
+
+                        const value = this.value.toLowerCase().trim();
+
+                        if (value.length >= 3) {
+
+                            tbodyAllTr.forEach(function (tr) {
+                                tr.style.display = 'none'
+                            });
+
+                            // Find the titles that contain the user's input
+                            const trDisplay = tbodyAllTr.filter(function (tr) {
+                                return tr.querySelector(`.title`).innerText.toLowerCase().trim().includes(value)
+                            });
+
+                            trDisplay.forEach(function (tr) {
+                                tr.removeAttribute('style')
+                            });
+                        }
+                        else {
+                            tbodyAllTr.forEach(function (tr) {
+                                tr.removeAttribute('style')
+                            });
+                        }
+                    });
+                }
+            } catch (e) {
+                console.log(e);
+            }
+
+        }
+
+
+        /*
+            var fetchFile = fetch('./fliker.json')
+                .then(function (response) {
+                    return response.json()
+                });
+        */
+        main();
+    </script>
+</body>
+
+
+</html>
